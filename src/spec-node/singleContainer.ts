@@ -13,6 +13,7 @@ import { LogLevel, Log, makeLog } from '../spec-utils/log';
 import { extendImage, getExtendImageBuildInfo, updateRemoteUserUID } from './containerFeatures';
 import { getDevcontainerMetadata, getImageBuildInfoFromDockerfile, getImageMetadataFromContainer, ImageMetadataEntry, mergeConfiguration, MergedDevContainerConfig } from './imageMetadata';
 import { ensureDockerfileHasFinalStageName } from './dockerfileUtils';
+import { applyStaticPorts } from './containerNetwork';
 
 export const hostFolderLabel = 'devcontainer.local_folder'; // used to label containers created from a workspace/folder
 export const configFileLabel = 'devcontainer.config_file';
@@ -326,9 +327,7 @@ export async function spawnDevContainer(params: DockerResolverParameters, config
 	const { common } = params;
 	common.progress(ResolverProgress.StartingContainer);
 
-	const appPort = config.appPort;
-	const exposedPorts = typeof appPort === 'number' || typeof appPort === 'string' ? [appPort] : appPort || [];
-	const exposed = (<string[]>[]).concat(...exposedPorts.map(port => ['-p', typeof port === 'number' ? `127.0.0.1:${port}:${port}` : port]));
+	const exposed = applyStaticPorts(config);
 
 	const cwdMount = workspaceMount ? ['--mount', workspaceMount] : [];
 
